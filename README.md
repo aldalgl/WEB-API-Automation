@@ -113,5 +113,5 @@ Report akan menampilkan: jumlah test pass/fail, durasi, detail request/response 
 
 ---
 
-## Autohor
+## Author
 Alda Giot Marito Lumban Gaol
