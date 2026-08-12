@@ -15,18 +15,13 @@ on:
 
 jobs:
   api-automation-test:
-    name: Run API Tests (RestAssured - dummyapi.io)
+    name: Run API Tests (TestNG + RestAssured - api.rizqifauzan.com)
     runs-on: ubuntu-latest
 
     if: >
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && (github.event.action != 'closed' || github.event.pull_request.merged == true))
-
-    env:
-      # WAJIB diisi di: repo Settings > Secrets and variables > Actions > New repository secret
-      # Daftar gratis di https://dummyapi.io untuk mendapatkan app-id
-      APP_ID: ${{ secrets.APP_ID }}
 
     steps:
       - name: Checkout kode repository
@@ -43,11 +38,15 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # ---------- Jalankan API test (tag @api) ----------
-      - name: Run API Automation Tests (@api)
-        run: ./gradlew apiTest --stacktrace
+      # ---------- Jalankan seluruh API test (TestNG suite dari testng.xml) ----------
+      # Base URL API (api.rizqifauzan.com) tidak butuh header/secret app-id, jadi tidak perlu
+      # system property atau env var tambahan di sini.
+      - name: Run API Automation Tests
+        run: ./gradlew test --stacktrace
 
       # ---------- Generate laporan Allure ----------
+      # Plugin io.qameta.allure v4.x men-download Node.js + npm saat pertama kali generate report,
+      # jadi step ini butuh koneksi internet (runner GitHub sudah otomatis punya akses).
       - name: Generate Allure Report
         if: always()
         run: ./gradlew allureReport
@@ -58,19 +57,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
-          path: build/reports/allure-report
+          path: build/reports/allure-report/allureReport
           retention-days: 14
 
-      # ---------- Upload laporan Cucumber (HTML & JSON) sebagai artefak ----------
-      - name: Upload Cucumber HTML/JSON report artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cucumber-report
-          path: build/cucumber-report/api
-          retention-days: 14
-
-      # ---------- Upload hasil mentah TestNG ----------
+      # ---------- Upload hasil mentah TestNG + Allure results ----------
       - name: Upload raw test results artifact
         if: always()
         uses: actions/upload-artifact@v4
