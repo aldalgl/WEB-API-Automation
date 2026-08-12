@@ -1,4 +1,4 @@
-name: Web & API Automation CI
+name: API Automation CI
 
 # Workflow berjalan pada 4 event:
 # 1. Manual trigger lewat tab Actions di GitHub ("Run workflow")
@@ -14,13 +14,10 @@ on:
     types: [ opened, synchronize, reopened, closed ]
 
 jobs:
-  web-and-api-automation-test:
-    name: Run Web UI (Selenium) & API (RestAssured) Tests
+  api-automation-test:
+    name: Run API Tests (RestAssured - dummyapi.io)
     runs-on: ubuntu-latest
 
-    # - push & workflow_dispatch: selalu jalan
-    # - pull_request: jalan kalau statusnya BUKAN closed (dibuka/diupdate),
-    #   ATAU kalau closed TAPI benar-benar sudah di-merge (bukan sekadar ditutup)
     if: >
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
@@ -43,22 +40,14 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      # ---------- Environment: Chrome untuk Selenium ----------
-      - name: Set up Chrome
-        uses: browser-actions/setup-chrome@v1
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-
-      # ---------- Jalankan Web UI test (tag @web) ----------
-      - name: Run Web UI Automation Tests (@web)
-        run: ./gradlew webTest --stacktrace
 
       # ---------- Jalankan API test (tag @api) ----------
       - name: Run API Automation Tests (@api)
         run: ./gradlew apiTest --stacktrace
 
-      # ---------- Generate laporan Allure gabungan ----------
+      # ---------- Generate laporan Allure ----------
       - name: Generate Allure Report
         if: always()
         run: ./gradlew allureReport
@@ -78,10 +67,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cucumber-report
-          path: build/cucumber-report
+          path: build/cucumber-report/api
           retention-days: 14
 
-      # ---------- Upload hasil mentah TestNG + screenshot kegagalan ----------
+      # ---------- Upload hasil mentah TestNG ----------
       - name: Upload raw test results artifact
         if: always()
         uses: actions/upload-artifact@v4
