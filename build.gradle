@@ -1,0 +1,65 @@
+plugins {
+    id 'java'
+    // v4.x adalah rewrite modern dari allure-gradle plugin, kompatibel dengan Gradle 8.11+/9.x.
+    // JANGAN pakai versi 2.x (legacy) karena masih bergantung pada Gradle Convention API
+    // yang sudah dihapus di Gradle versi baru -> menyebabkan error "Could not create task
+    // ':allureReport' ... DefaultDecoratedConvention" saat sync.
+    id 'io.qameta.allure' version '4.1.0'
+}
+
+group = 'com.rizqifauzan.api'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+// Plugin ini otomatis menambahkan dependency allure-testng + javaagent aspectj
+// sehingga kita tidak perlu setup manual untuk integrasi Allure + TestNG
+allure {
+    version = "3.9.0" // versi runtime report Allure yang dipakai (Allure 3)
+    adapter {
+        frameworks {
+            testng
+        }
+    }
+}
+
+dependencies {
+    // REST Assured - library utama untuk API testing
+    testImplementation 'io.rest-assured:rest-assured:5.4.0'
+    testImplementation 'io.rest-assured:json-path:5.4.0'
+    testImplementation 'io.rest-assured:json-schema-validator:5.4.0'
+
+    // Adapter Allure untuk REST Assured (mencatat request/response ke Allure report).
+    // Plugin io.qameta.allure hanya auto-menambahkan adapter untuk TEST FRAMEWORK yang
+    // didaftarkan di allure.adapter.frameworks (mis. testng), TIDAK untuk allure-rest-assured,
+    // jadi harus ditambahkan manual di sini. Versi disamakan dengan allureJavaVersion plugin.
+    testImplementation 'io.qameta.allure:allure-rest-assured:2.35.2'
+
+    // TestNG - test framework
+    testImplementation 'org.testng:testng:7.10.2'
+
+    // Jackson - untuk membaca/parsing file JSON test data
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.17.1'
+}
+
+test {
+    useTestNG() {
+        suites 'src/test/resources/testng.xml'
+    }
+    // Supaya test selalu dijalankan ulang, tidak di-skip karena "up to date"
+    outputs.upToDateWhen { false }
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+        exceptionFormat = "full"
+    }
+}
